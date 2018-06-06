@@ -1,23 +1,24 @@
 import { Injectable } from '@angular/core';
 import { of } from 'rxjs';
-import { filter, map, switchMap } from 'rxjs/operators';
+import { filter, map, first, tap, switchMap } from 'rxjs/operators';
 import { forkJoin } from 'rxjs/internal/observable/forkJoin';
+import { zip } from 'rxjs/internal/observable/zip';
 
-const products = [
+const subjects = [
   {
     id: 1,
     subject_name: 'Math',
-    typeID: 4,
+    specialityID: 4,
   },
   {
     id: 2,
     subject_name: 'Logic',
-    typeID: 4,
+    specialityID: 4,
   },
   {
     id: 3,
     subject_name: 'Philosophy',
-    typeID: 5,
+    specialityID: 5,
   },
 ];
 const questions = {
@@ -75,30 +76,34 @@ const questions = {
 export class FakeHTTPService {
   constructor() {}
 
-  getAllProducts() {
-    return of(...products);
+  getAllSubjects() {
+    return of(...subjects);
   }
 
-  getNormalizedProducts() {
-    return this.getAllProducts().pipe(
+  getNormalizedSubjects() {
+    return this.getAllSubjects().pipe(
       map(item => ({
         id: item.id,
-        typeID: item.typeID,
+        specialityID: item.specialityID,
         subjectName: item.subject_name,
       }))
     );
   }
 
-  getProductsByTypeId(typeID) {
-    return this.getNormalizedProducts().pipe(
-      filter(item => item.typeID === typeID)
+  getSubjectsBySpecialityID(specialityID) {
+    return this.getNormalizedSubjects().pipe(
+      filter(item => item.specialityID === specialityID)
     );
   }
 
-  getProductsById(subjectId) {
-    return this.getNormalizedProducts().pipe(
-      filter(item => item.id === subjectId)
+  logItems() {
+    return this.getNormalizedSubjects().pipe(
+      tap(item => console.log('Logging item:', item))
     );
+  }
+
+  takeFirst() {
+    return this.getNormalizedSubjects().pipe(first());
   }
 
   getQuestionByLevel(level) {
@@ -111,18 +116,24 @@ export class FakeHTTPService {
     return forkJoin(questionsPool);
   }
 
-  mergeSubjectAndQuestions(subject) {
+  getSubjectData(subjectId) {
+    return this.getSubjectsById(subjectId).pipe(
+      switchMap(subject => this.mergeSubjectAndQuestions(subject))
+    );
+  }
+
+  private getSubjectsById(subjectId) {
+    return this.getNormalizedSubjects().pipe(
+      filter(item => item.id === subjectId)
+    );
+  }
+
+  private mergeSubjectAndQuestions(subject) {
     return this.getMergedQuestions([1, 2]).pipe(
       map(questions => ({
         subject,
         questions,
       }))
-    );
-  }
-
-  getSubjectData(subjectId) {
-    return this.getProductsById(subjectId).pipe(
-      switchMap(subject => this.mergeSubjectAndQuestions(subject))
     );
   }
 }
