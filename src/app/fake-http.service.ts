@@ -128,14 +128,19 @@ export class FakeHTTPService {
     );
   }
 
-   private mergeSubjectAndQuestions(subject) {
+  private checkQuestions(subjectId) {
     return this.getMergedQuestions([1, 2]).pipe(
       map(result =>
         result.map((question: any) =>
-          question.filter((questionFiltered: any) => questionFiltered.subjectID === subject.id))),
+          question.filter((questionFiltered: any) => questionFiltered.subjectID === subjectId)))
+    );
+  }
+
+  private mergeSubjectAndQuestions(subject) {
+    return this.checkQuestions(subject.id).pipe(
       map(question => ({
         subject,
-        question,
+        question
       }))
     );
   }
